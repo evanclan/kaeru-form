@@ -17,6 +17,7 @@ type Message = {
     options?: string[];
     placeholder?: string;
     time: string;
+    nodeId?: string;
 };
 
 type Node = {
@@ -149,7 +150,8 @@ export default function ChatRunner() {
                     type: inputNode.type as any,
                     options: optionsList,
                     placeholder: placeholder,
-                    time: getCurrentTime()
+                    time: getCurrentTime(),
+                    nodeId: inputNode.id
                 },
             ]);
         }, 1000);
@@ -176,6 +178,55 @@ export default function ChatRunner() {
 
         if (!nextEdge) {
             nextEdge = edges.find(e => e.source_node === inputNode.id && !e.condition);
+        }
+
+        if (nextEdge) {
+            const nextNode = nodes.find(n => n.id === nextEdge.target_node);
+            if (nextNode) {
+                processNode(nextNode, nodes, edges);
+            } else {
+                finishFlow(newAnswers);
+            }
+        } else {
+            finishFlow(newAnswers);
+        }
+    };
+
+    const handleRewind = (messageIndex: number, newAnswer: string, optionIndex: number) => {
+        const keepMessages = messages.slice(0, messageIndex);
+        const botQuestionMessage = keepMessages[keepMessages.length - 1];
+
+        if (!botQuestionMessage || !botQuestionMessage.nodeId) return;
+
+        const targetNodeId = botQuestionMessage.nodeId;
+        const targetNode = nodes.find(n => n.id === targetNodeId);
+
+        if (!targetNode) return;
+
+        setMessages(keepMessages);
+
+        // Update answers: replace the answer for targetNode
+        const newAnswers = { ...answersRef.current };
+        newAnswers[targetNodeId] = newAnswer;
+        setAnswers(newAnswers);
+        answersRef.current = newAnswers;
+
+        // Add the new user message
+        setMessages(prev => [
+            ...prev,
+            { id: Date.now().toString(), sender: 'user', content: newAnswer, time: getCurrentTime() },
+        ]);
+
+        setInputNode(targetNode);
+
+        // Logic to determine next step (similar to handleAnswer)
+        let nextEdge: Edge | undefined;
+        if (targetNode.type === 'select') {
+            const condition = `option-${optionIndex}`;
+            nextEdge = edges.find(e => e.source_node === targetNode.id && e.condition === condition);
+        }
+        if (!nextEdge) {
+            nextEdge = edges.find(e => e.source_node === targetNode.id && !e.condition);
         }
 
         if (nextEdge) {
@@ -367,68 +418,103 @@ export default function ChatRunner() {
                             <span className="bg-[rgba(0,0,0,0.2)] text-white text-[11px] px-3 py-1 rounded-full font-medium">今日</span>
                         </div>
 
-                        {messages.map((msg) => (
-                            <div
-                                key={msg.id}
-                                className={clsx(
-                                    "flex w-full animate-in fade-in slide-in-from-bottom-1 duration-300",
-                                    msg.sender === 'user' ? "justify-end" : "justify-start"
-                                )}
-                            >
-                                <div className={clsx("flex gap-2 max-w-[85%]", msg.sender === 'user' ? "flex-row-reverse" : "flex-row items-start")}>
-                                    {/* Avatar for Bot */}
-                                    {msg.sender === 'bot' && (
-                                        <div className="h-[42px] w-[42px] flex-shrink-0 cursor-pointer hover:opacity-90 transition mt-0 rounded-full overflow-hidden border border-gray-100 bg-white">
-                                            <img src="/kaeru_profile.png" alt="Kaeru" className="w-full h-full object-cover" />
-                                        </div>
-                                    )}
+                        {messages.map((msg, index) => {
+                            const isUser = msg.sender === 'user';
+                            const previousBotMsg = isUser && index > 0 ? messages[index - 1] : null;
+                            // Check if modifiable: Must be user message, previous msg from bot, previous msg has options (meaning it was a select)
+                            const isSelectable = isUser && previousBotMsg?.type === 'select' && previousBotMsg?.options && (Array.isArray(previousBotMsg.options) || (previousBotMsg.options as any).items);
 
-                                    <div className={clsx("flex flex-col", msg.sender === 'user' ? "items-end" : "items-start")}>
-                                        {/* Name for Bot */}
-                                        {msg.sender === 'bot' && (
-                                            <span className="text-[11px] text-white/90 mb-1 ml-1 opacity-90 hidden">Kaeru</span>
+                            return (
+                                <div
+                                    key={msg.id}
+                                    className={clsx(
+                                        "flex w-full animate-in fade-in slide-in-from-bottom-1 duration-300",
+                                        isUser ? "justify-end" : "justify-start"
+                                    )}
+                                >
+                                    <div className={clsx("flex gap-2 max-w-[85%]", isUser ? "flex-row-reverse" : "flex-row items-start")}>
+                                        {/* Avatar for Bot */}
+                                        {!isUser && (
+                                            <div className="h-[42px] w-[42px] flex-shrink-0 cursor-pointer hover:opacity-90 transition mt-0 rounded-full overflow-hidden border border-gray-100 bg-white">
+                                                <img src="/kaeru_profile.png" alt="Kaeru" className="w-full h-full object-cover" />
+                                            </div>
                                         )}
 
-                                        <div className="flex items-end gap-1.5">
-                                            {/* Timestamp Left for User */}
-                                            {msg.sender === 'user' && (
-                                                <span className="text-[10px] text-white self-end mb-1 opacity-80 whitespace-nowrap mr-0.5">{msg.time}</span>
+                                        <div className={clsx("flex flex-col", isUser ? "items-end" : "items-start")}>
+                                            {/* Name for Bot */}
+                                            {!isUser && (
+                                                <span className="text-[11px] text-white/90 mb-1 ml-1 opacity-90 hidden">Kaeru</span>
                                             )}
 
-                                            {/* Bubble */}
-                                            <div className={clsx(
-                                                "relative px-4 py-2.5 text-[15px] shadow-sm break-words leading-relaxed",
-                                                msg.sender === 'user'
-                                                    ? "bg-[#8DE055] text-black rounded-[20px] rounded-tr-none"
-                                                    : "bg-white text-black rounded-[20px] rounded-tl-none pr-5 pl-4"
-                                            )}>
-                                                {/* Tail CSS would be handled here in proper CSS but using simple rounded trick for now */}
-                                                {/* Left Tail (Bot) */}
-                                                {msg.sender === 'bot' && (
-                                                    <svg className="absolute top-[5px] -left-[9px] w-5 h-5 text-white fill-current" viewBox="0 0 20 20">
-                                                        <path d="M20 0 C 20 0 0 0 8 12 L 20 18 Z" transform="rotate(-15 10 10)" />
-                                                        <path d="M8.5,0.7 C8.5,0.7 0.9,1.1 0.4,9.6 C-0.1,16.8 6.5,13.9 6.5,13.9" fill="none" />
-                                                    </svg>
-                                                )}
-                                                {/* Right Tail (User) */}
-                                                {msg.sender === 'user' && (
-                                                    <svg className="absolute top-[5px] -right-[9px] w-5 h-5 text-[#8DE055] fill-current" viewBox="0 0 20 20" style={{ transform: 'scaleX(-1)' }}>
-                                                        <path d="M20 0 C 20 0 0 0 8 12 L 20 18 Z" transform="rotate(-15 10 10)" />
-                                                    </svg>
+                                            <div className="flex items-end gap-1.5">
+                                                {/* Timestamp Left for User */}
+                                                {isUser && (
+                                                    <span className="text-[10px] text-white self-end mb-1 opacity-80 whitespace-nowrap mr-0.5">{msg.time}</span>
                                                 )}
 
-                                                {msg.content}
+                                                {/* Bubble */}
+                                                {isSelectable ? (
+                                                    <Select onValueChange={(value) => {
+                                                        const opts = previousBotMsg?.options || [];
+                                                        const items = Array.isArray(opts) ? opts : (opts as any).items || [];
+                                                        const idx = items.indexOf(value);
+                                                        handleRewind(index, value, idx);
+                                                    }}>
+                                                        <SelectTrigger
+                                                            className="h-auto w-auto p-0 border-none bg-transparent hover:bg-transparent focus:ring-0 focus:ring-offset-0 [&>svg]:hidden"
+                                                        >
+                                                            <div className={clsx(
+                                                                "relative px-4 py-2.5 text-[15px] shadow-sm break-words leading-relaxed cursor-pointer hover:opacity-90 transition-opacity",
+                                                                "bg-[#8DE055] text-black rounded-[20px] rounded-tr-none"
+                                                            )}>
+                                                                <svg className="absolute top-[5px] -right-[9px] w-5 h-5 text-[#8DE055] fill-current" viewBox="0 0 20 20" style={{ transform: 'scaleX(-1)' }}>
+                                                                    <path d="M20 0 C 20 0 0 0 8 12 L 20 18 Z" transform="rotate(-15 10 10)" />
+                                                                </svg>
+                                                                {msg.content}
+                                                            </div>
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            {(Array.isArray(previousBotMsg.options) ? previousBotMsg.options : (previousBotMsg.options as any)?.items || []).map((opt: string, i: number) => (
+                                                                <SelectItem key={i} value={opt}>{opt}</SelectItem>
+                                                            ))}
+                                                        </SelectContent>
+                                                    </Select>
+                                                ) : (
+                                                    <div className={clsx(
+                                                        "relative px-4 py-2.5 text-[15px] shadow-sm break-words leading-relaxed",
+                                                        isUser
+                                                            ? "bg-[#8DE055] text-black rounded-[20px] rounded-tr-none"
+                                                            : "bg-white text-black rounded-[20px] rounded-tl-none pr-5 pl-4"
+                                                    )}>
+                                                        {/* Tail CSS */}
+                                                        {/* Left Tail (Bot) */}
+                                                        {!isUser && (
+                                                            <svg className="absolute top-[5px] -left-[9px] w-5 h-5 text-white fill-current" viewBox="0 0 20 20">
+                                                                <path d="M20 0 C 20 0 0 0 8 12 L 20 18 Z" transform="rotate(-15 10 10)" />
+                                                                <path d="M8.5,0.7 C8.5,0.7 0.9,1.1 0.4,9.6 C-0.1,16.8 6.5,13.9 6.5,13.9" fill="none" />
+                                                            </svg>
+                                                        )}
+                                                        {/* Right Tail (User) */}
+                                                        {isUser && (
+                                                            <svg className="absolute top-[5px] -right-[9px] w-5 h-5 text-[#8DE055] fill-current" viewBox="0 0 20 20" style={{ transform: 'scaleX(-1)' }}>
+                                                                <path d="M20 0 C 20 0 0 0 8 12 L 20 18 Z" transform="rotate(-15 10 10)" />
+                                                            </svg>
+                                                        )}
+
+                                                        {msg.content}
+                                                    </div>
+                                                )}
+
+                                                {/* Timestamp Right for Bot */}
+                                                {!isUser && (
+                                                    <span className="text-[10px] text-white self-end mb-1 opacity-80 whitespace-nowrap ml-0.5">{msg.time}</span>
+                                                )}
                                             </div>
-
-                                            {/* Timestamp Right for Bot */}
-                                            {msg.sender === 'bot' && (
-                                                <span className="text-[10px] text-white self-end mb-1 opacity-80 whitespace-nowrap ml-0.5">{msg.time}</span>
-                                            )}
                                         </div>
                                     </div>
                                 </div>
-                            </div>
-                        ))}
+                            );
+                        })}
 
                         {isTyping && (
                             <div className="flex w-full justify-start animate-in fade-in duration-300">
