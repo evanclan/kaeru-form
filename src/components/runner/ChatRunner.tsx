@@ -340,22 +340,22 @@ export default function ChatRunner() {
     const showFixedInput = inputNode && inputNode.type !== 'select' && !isTyping && !(currentNode?.type === 'statement' && inputNode.id === currentNode.id) && messages[messages.length - 1]?.sender !== 'user';
 
     return (
-        <div className="flex justify-center bg-gray-100 min-h-screen">
-            <div className="flex flex-col h-screen bg-[#7293C3] w-full max-w-[480px] shadow-2xl overflow-hidden font-sans border-x border-gray-200 relative">
+        <div className="flex justify-center bg-gray-100 min-h-[100dvh]">
+            <div className="flex flex-col h-[100dvh] bg-[#7293C3] w-full max-w-[480px] shadow-2xl overflow-hidden font-sans border-x border-gray-200 relative">
                 {/* LINE-style Header */}
-                <div className="flex-none bg-[#111111] bg-opacity-90 text-white px-4 py-3 pb-3 pt-14 sm:pt-4 flex items-center justify-between shadow-sm z-10 sticky top-0 backdrop-blur-sm">
+                <div className="flex-none bg-[#111111]/90 text-white px-4 py-3 sm:py-4 flex items-center justify-between shadow-sm z-10 sticky top-0 backdrop-blur-md supports-[padding-top:env(safe-area-inset-top)]:pt-[env(safe-area-inset-top,20px)]">
                     <div className="flex items-center gap-3">
-                        <ChevronLeft className="text-white cursor-pointer hover:opacity-80" size={26} />
+                        <ChevronLeft className="text-white cursor-pointer hover:opacity-80 transition-opacity" size={26} />
                         <h1 className="font-semibold text-lg tracking-wide">Kaeru Assistant</h1>
                     </div>
                     <div className="flex items-center gap-6">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="cursor-pointer hover:opacity-80"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" /></svg>
-                        <Menu className="text-white cursor-pointer hover:opacity-80" size={26} />
+                        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="cursor-pointer hover:opacity-80 transition-opacity"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" /></svg>
+                        <Menu className="text-white cursor-pointer hover:opacity-80 transition-opacity" size={26} />
                     </div>
                 </div>
 
                 {/* Chat Area */}
-                <div className="flex-1 overflow-y-auto px-4 py-2 scrollbar-hide" style={{ scrollbarWidth: 'none' }}>
+                <div className="flex-1 overflow-y-auto px-4 py-2 scrollbar-hide overscroll-contain" style={{ scrollbarWidth: 'none' }}>
                     <div className="space-y-4 pb-4">
                         {/* Date Divider Mock */}
                         <div className="flex justify-center my-6">
@@ -454,7 +454,7 @@ export default function ChatRunner() {
 
                 {/* Fixed Input Area */}
                 {showFixedInput && (
-                    <div className="flex-none bg-white border-t border-gray-200 p-2 pb-8 sm:pb-3 px-3">
+                    <div className="flex-none bg-white border-t border-gray-200 p-2 pb-8 sm:pb-3 px-3 animate-in slide-in-from-bottom-10 fade-in duration-300">
                         {renderFixedInput()}
                     </div>
                 )}
