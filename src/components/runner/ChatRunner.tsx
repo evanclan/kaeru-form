@@ -265,7 +265,7 @@ export default function ChatRunner() {
             setInputNode(null); // Clear input node to hide input area
             setMessages(prev => [
                 ...prev,
-                { id: 'end', sender: 'bot', content: '回答が完了しました。ご協力ありがとうございました。', time: getCurrentTime() },
+                { id: 'end', sender: 'bot', content: '回答を保存しました。ご協力ありがとうございました。', time: getCurrentTime() },
             ]);
         }, 1000);
     };
@@ -396,8 +396,19 @@ export default function ChatRunner() {
     const showFixedInput = inputNode && inputNode.type !== 'select' && !isTyping && !(currentNode?.type === 'statement' && inputNode.id === currentNode.id) && messages[messages.length - 1]?.sender !== 'user';
 
     return (
-        <div className="flex justify-center bg-gray-100 min-h-[100dvh]">
-            <div className="flex flex-col h-[100dvh] bg-[#7293C3] w-full max-w-[480px] shadow-2xl overflow-hidden font-sans border-x border-gray-200 relative">
+        <div className="flex justify-center bg-gray-100 min-h-[100dvh] relative">
+            {/* Background Pattern for Desktop */}
+            <div
+                className="absolute inset-0 z-0 hidden md:block pointer-events-none"
+                style={{
+                    backgroundImage: "url('/chat-bg.png')",
+                    backgroundRepeat: "repeat",
+                    opacity: 0.3,
+                    backgroundSize: "300px"
+                }}
+            />
+
+            <div className="flex flex-col h-[100dvh] bg-[#7293C3] w-full max-w-[480px] shadow-2xl overflow-hidden font-sans border-x border-gray-200 relative z-10">
                 {/* LINE-style Header */}
                 <div className="flex-none bg-[#111111]/90 text-white px-4 py-3 sm:py-4 flex items-center justify-between shadow-sm z-10 sticky top-0 backdrop-blur-md supports-[padding-top:env(safe-area-inset-top)]:pt-[env(safe-area-inset-top,20px)]">
                     <div className="flex items-center gap-3">

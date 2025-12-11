@@ -18,7 +18,7 @@ import {
 import '@xyflow/react/dist/style.css';
 import { supabase } from '@/lib/supabaseClient';
 import BranchNode from '@/components/counseling/builder/BranchNode';
-import { Save, Loader2, Trash2, GitBranch, ArrowLeft, Plus } from 'lucide-react';
+import { Save, Loader2, Trash2, GitBranch, ArrowLeft, Plus, Pencil } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
 import {
@@ -50,6 +50,11 @@ const CounselingBuilderContent = () => {
     const [saving, setSaving] = useState(false);
     const [loading, setLoading] = useState(true);
     const [topicTitle, setTopicTitle] = useState('');
+
+    // Edit Topic State
+    const [isEditInfoDialogOpen, setIsEditInfoDialogOpen] = useState(false);
+    const [editingTopic, setEditingTopic] = useState<any | null>(null);
+    const [editTopicTitle, setEditTopicTitle] = useState('');
 
     // Import Topic State
     const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
@@ -487,6 +492,35 @@ const CounselingBuilderContent = () => {
         }
     };
 
+    const handleEditClick = (topic: any) => {
+        setEditingTopic(topic);
+        setEditTopicTitle(topic.title);
+        setIsEditInfoDialogOpen(true);
+    };
+
+    const updateTopic = async () => {
+        if (!editingTopic || !editTopicTitle.trim()) return;
+        setSaving(true);
+        try {
+            const { error } = await supabase
+                .from('counseling_topics')
+                .update({ title: editTopicTitle })
+                .eq('id', editingTopic.id);
+
+            if (error) throw error;
+
+            toast.success("Topic updated successfully.");
+            setIsEditInfoDialogOpen(false);
+            setEditingTopic(null);
+            fetchTopics();
+        } catch (error: any) {
+            console.error('Error updating topic:', error);
+            toast.error('Failed to update topic');
+        } finally {
+            setSaving(false);
+        }
+    };
+
     if (!topicId) {
         return (
             <div className="min-h-screen bg-gray-50 p-8">
@@ -548,36 +582,47 @@ const CounselingBuilderContent = () => {
                                     <div>
                                         <div className="flex justify-between items-start mb-2">
                                             <h3 className="font-bold text-lg text-gray-900 pr-8">{topic.title}</h3>
-                                            <AlertDialog>
-                                                <AlertDialogTrigger asChild>
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        className="h-8 w-8 text-gray-400 hover:text-red-600 hover:bg-red-50 absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity"
-                                                        title="Delete Topic"
-                                                    >
-                                                        <Trash2 size={16} />
-                                                    </Button>
-                                                </AlertDialogTrigger>
-                                                <AlertDialogContent>
-                                                    <AlertDialogHeader>
-                                                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                                                        <AlertDialogDescription>
-                                                            This action cannot be undone. This will permanently delete the topic
-                                                            "{topic.title}" and all its associated flow data.
-                                                        </AlertDialogDescription>
-                                                    </AlertDialogHeader>
-                                                    <AlertDialogFooter>
-                                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                        <AlertDialogAction
-                                                            className="bg-red-600 hover:bg-red-700"
-                                                            onClick={(e) => deleteTopic(topic.id, e)}
+                                            <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="h-8 w-8 text-gray-400 hover:text-blue-600 hover:bg-blue-50"
+                                                    title="Edit Topic"
+                                                    onClick={() => handleEditClick(topic)}
+                                                >
+                                                    <Pencil size={16} />
+                                                </Button>
+                                                <AlertDialog>
+                                                    <AlertDialogTrigger asChild>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="h-8 w-8 text-gray-400 hover:text-red-600 hover:bg-red-50"
+                                                            title="Delete Topic"
                                                         >
-                                                            Delete
-                                                        </AlertDialogAction>
-                                                    </AlertDialogFooter>
-                                                </AlertDialogContent>
-                                            </AlertDialog>
+                                                            <Trash2 size={16} />
+                                                        </Button>
+                                                    </AlertDialogTrigger>
+                                                    <AlertDialogContent>
+                                                        <AlertDialogHeader>
+                                                            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                                            <AlertDialogDescription>
+                                                                This action cannot be undone. This will permanently delete the topic
+                                                                "{topic.title}" and all its associated flow data.
+                                                            </AlertDialogDescription>
+                                                        </AlertDialogHeader>
+                                                        <AlertDialogFooter>
+                                                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                            <AlertDialogAction
+                                                                className="bg-red-600 hover:bg-red-700"
+                                                                onClick={(e) => deleteTopic(topic.id, e)}
+                                                            >
+                                                                Delete
+                                                            </AlertDialogAction>
+                                                        </AlertDialogFooter>
+                                                    </AlertDialogContent>
+                                                </AlertDialog>
+                                            </div>
                                         </div>
                                         <p className="text-sm text-gray-500 line-clamp-2">
                                             {topic.description || 'No description'}
@@ -599,6 +644,36 @@ const CounselingBuilderContent = () => {
                         </div>
                     )}
                 </div>
+
+                {/* Edit Topic Dialog */}
+                <Dialog open={isEditInfoDialogOpen} onOpenChange={setIsEditInfoDialogOpen}>
+                    <DialogContent>
+                        <DialogHeader>
+                            <DialogTitle>Edit Topic Title</DialogTitle>
+                            <DialogDescription>
+                                Change the name of this counseling topic.
+                            </DialogDescription>
+                        </DialogHeader>
+                        <div className="space-y-4 py-4">
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium text-gray-700">Topic Title</label>
+                                <input
+                                    type="text"
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    placeholder="Topic Name"
+                                    value={editTopicTitle}
+                                    onChange={(e) => setEditTopicTitle(e.target.value)}
+                                />
+                            </div>
+                        </div>
+                        <DialogFooter>
+                            <Button variant="outline" onClick={() => setIsEditInfoDialogOpen(false)}>Cancel</Button>
+                            <Button onClick={updateTopic} disabled={saving || !editTopicTitle.trim()}>
+                                {saving ? <Loader2 className="animate-spin" size={16} /> : 'Save Changes'}
+                            </Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
             </div>
         );
     }
@@ -687,6 +762,8 @@ const CounselingBuilderContent = () => {
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
+
+
         </div>
     );
 };
