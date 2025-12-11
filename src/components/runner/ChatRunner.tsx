@@ -207,6 +207,7 @@ export default function ChatRunner() {
 
         setTimeout(() => {
             setIsTyping(false);
+            setInputNode(null); // Clear input node to hide input area
             setMessages(prev => [
                 ...prev,
                 { id: 'end', sender: 'bot', content: '回答が完了しました。ご協力ありがとうございました。', time: getCurrentTime() },
