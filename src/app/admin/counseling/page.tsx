@@ -644,6 +644,9 @@ export default function CounselingPage() {
                         </div>
                     </div>
                     <DialogFooter>
+                        <Link href="/admin/counseling/counseling-builder">
+                            <Button variant="outline" className="mr-2">Go to Builder</Button>
+                        </Link>
                         <Button onClick={handleIntakeSubmit}>Start Session</Button>
                     </DialogFooter>
                 </DialogContent>
