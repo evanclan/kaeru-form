@@ -559,7 +559,7 @@ const AdminBuilder = () => {
     };
 
     return (
-        <div className="h-screen w-full bg-gray-50 relative overflow-hidden">
+        <div className="h-[calc(100vh-70px)] w-full bg-gray-50 relative overflow-hidden">
             <ReactFlow
                 nodes={nodes}
                 edges={edges}
