@@ -521,23 +521,30 @@ export default function CounselingPage() {
                 {fullSessionLog.length > 0 && (
                     <div className="flex flex-col gap-2 opacity-60">
                         {fullSessionLog.map((item, index) => (
-                            <div key={`log-${index}`} className="text-lg font-bold text-gray-500 pl-4 border-l-4 border-gray-300">
+                            <motion.div
+                                key={`log-${index}`}
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                className="text-lg font-bold text-gray-500 pl-4 border-l-4 border-gray-300"
+                            >
                                 {item.label}
-                            </div>
+                            </motion.div>
                         ))}
                         <div className="border-b border-gray-200 my-4" />
                     </div>
                 )}
 
                 {/* Current History Stack */}
-                <div className="flex flex-col gap-2 relative group">
-                    <AnimatePresence>
+                <div className="flex flex-col gap-2 relative group min-h-[50px]">
+                    <AnimatePresence mode="popLayout" initial={false}>
                         {historyStack.map((item, index) => (
                             <motion.div
-                                key={`curr-${index}`}
-                                initial={{ opacity: 0, x: -20 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                exit={{ opacity: 0, x: -20 }}
+                                key={`curr-${item.id}-${index}`}
+                                layout
+                                initial={{ opacity: 0, x: -20, scale: 0.95 }}
+                                animate={{ opacity: 1, x: 0, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.95, transition: { duration: 0.2 } }}
+                                transition={{ type: "spring", stiffness: 300, damping: 30 }}
                                 className="flex items-center group/item"
                             >
                                 <div className="text-2xl font-bold text-gray-900 pl-4 border-l-4 border-blue-500 flex-1">
@@ -546,34 +553,21 @@ export default function CounselingPage() {
                             </motion.div>
                         ))}
                     </AnimatePresence>
-
-                    {/* Floating Undo near current stack if prefered, but header approach is cleaner. 
-                        Let's also add a small inline undo capability or just rely on the header button?
-                        User asked: "can we have an undo button to go back i step."
-                        I put it in the header. That should be visible enough. 
-                        Actually, let's also put one right below the stack for better UX?
-                        "when picked the topics will stacked in the top... can we have an undo button to go back i step"
-                        
-                        I'll stick to the header button I added above, plus maybe a small one near the stack if needed.
-                        Let's review the code I added in the ReplacementContent.
-                        Yes, I added it in the Header area:
-                        
-                        ```tsx
-                        {historyStack.length > 0 && (
-                            <Button variant="ghost" size="sm" onClick={handleUndo} className="text-gray-500 hover:text-gray-800">
-                                <RotateCcw size={16} className="mr-2" />
-                                Undo
-                            </Button>
-                        )}
-                        ```
-                        
-                        This is good.
-                    */}
                 </div>
 
                 {/* Current Selection Area */}
-                <div className="pt-4">
-                    {renderCurrentOptions()}
+                <div className="pt-8">
+                    <AnimatePresence mode="wait">
+                        <motion.div
+                            key={currentNode?.id || 'list'}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -10 }}
+                            transition={{ duration: 0.2 }}
+                        >
+                            {renderCurrentOptions()}
+                        </motion.div>
+                    </AnimatePresence>
                 </div>
             </div>
 
