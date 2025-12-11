@@ -79,6 +79,10 @@ export default function ChatRunner() {
         };
 
         fetchFlow();
+
+        // Preload bot avatar
+        const img = new Image();
+        img.src = "/kaeru_profile.png";
     }, []);
 
     const getCurrentTime = () => {
@@ -374,10 +378,9 @@ export default function ChatRunner() {
                                 <div className={clsx("flex gap-2 max-w-[85%]", msg.sender === 'user' ? "flex-row-reverse" : "flex-row items-start")}>
                                     {/* Avatar for Bot */}
                                     {msg.sender === 'bot' && (
-                                        <Avatar className="h-[42px] w-[42px] flex-shrink-0 cursor-pointer hover:opacity-90 transition mt-0">
-                                            <AvatarImage src="/kaeru_profile.png" alt="Kaeru" />
-                                            <AvatarFallback className="bg-white text-blue-600 font-bold border border-gray-100 text-lg">K</AvatarFallback>
-                                        </Avatar>
+                                        <div className="h-[42px] w-[42px] flex-shrink-0 cursor-pointer hover:opacity-90 transition mt-0 rounded-full overflow-hidden border border-gray-100 bg-white">
+                                            <img src="/kaeru_profile.png" alt="Kaeru" className="w-full h-full object-cover" />
+                                        </div>
                                     )}
 
                                     <div className={clsx("flex flex-col", msg.sender === 'user' ? "items-end" : "items-start")}>
@@ -430,10 +433,9 @@ export default function ChatRunner() {
                         {isTyping && (
                             <div className="flex w-full justify-start animate-in fade-in duration-300">
                                 <div className="flex gap-2 max-w-[85%] items-start">
-                                    <Avatar className="h-[42px] w-[42px] flex-shrink-0 mt-0">
-                                        <AvatarImage src="/kaeru_profile.png" alt="Kaeru" />
-                                        <AvatarFallback className="bg-white text-blue-600 font-bold border border-gray-100">K</AvatarFallback>
-                                    </Avatar>
+                                    <div className="h-[42px] w-[42px] flex-shrink-0 mt-0 rounded-full overflow-hidden border border-gray-100 bg-white">
+                                        <img src="/kaeru_profile.png" alt="Kaeru" className="w-full h-full object-cover" />
+                                    </div>
                                     <div className="flex flex-col items-start">
                                         <div className="relative bg-white text-black rounded-[20px] rounded-tl-none px-4 py-3 shadow-sm flex gap-1 items-center h-[42px]">
                                             <svg className="absolute top-[5px] -left-[9px] w-5 h-5 text-white fill-current" viewBox="0 0 20 20">
